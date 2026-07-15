@@ -1,0 +1,7 @@
+Write a complete Python module implementing an LRU cache with TTL support. Requirements:
+- A class `TTLCache(maxsize: int, ttl: float)` backed by an OrderedDict.
+- Methods: `get(key)`, `put(key, value)`, `evict_expired()`, `__len__`, `__contains__`.
+- Expired entries must be evicted lazily on access and eagerly via `evict_expired()`.
+- Thread-safe with a single `threading.Lock`.
+- Full type hints, docstrings, and a small `if __name__ == "__main__":` demo.
+Respond with a single Python code block only.

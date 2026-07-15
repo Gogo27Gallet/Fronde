@@ -1,0 +1,64 @@
+Here is a complete JSON configuration file. Make exactly these three changes: (1) set "log_level" to "debug", (2) change the "timeout_s" of the service named "billing" to 30, (3) add "eu-west-3" at the end of the "regions" array. Change nothing else, preserve key order and formatting. Return the COMPLETE modified JSON in a single ```json code block.
+
+```json
+{
+  "app": "orion-gateway",
+  "version": "2.14.1",
+  "log_level": "info",
+  "regions": ["eu-west-1", "eu-central-1", "us-east-1"],
+  "features": {
+    "rate_limiting": true,
+    "circuit_breaker": true,
+    "request_tracing": false,
+    "hot_reload": false
+  },
+  "limits": {
+    "max_connections": 4096,
+    "max_body_mb": 25,
+    "burst_rps": 900,
+    "sustained_rps": 300
+  },
+  "services": [
+    {
+      "name": "auth",
+      "url": "http://auth.internal:8443",
+      "timeout_s": 5,
+      "retries": 2,
+      "health_check": "/healthz"
+    },
+    {
+      "name": "catalog",
+      "url": "http://catalog.internal:8080",
+      "timeout_s": 10,
+      "retries": 3,
+      "health_check": "/health"
+    },
+    {
+      "name": "billing",
+      "url": "http://billing.internal:8081",
+      "timeout_s": 15,
+      "retries": 1,
+      "health_check": "/status"
+    },
+    {
+      "name": "notifications",
+      "url": "http://notify.internal:8082",
+      "timeout_s": 8,
+      "retries": 0,
+      "health_check": "/ping"
+    }
+  ],
+  "cache": {
+    "backend": "redis",
+    "url": "redis://cache.internal:6379/0",
+    "ttl_s": 600,
+    "max_entries": 100000
+  },
+  "telemetry": {
+    "exporter": "otlp",
+    "endpoint": "http://otel.internal:4317",
+    "sample_rate": 0.25,
+    "flush_interval_s": 10
+  }
+}
+```

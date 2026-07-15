@@ -1,0 +1,5 @@
+Generate a JSON document describing a fictional e-commerce product catalog. Exactly this shape:
+- top-level object with keys "catalog_id" (string), "generated_at" (ISO 8601), "categories" (array).
+- 4 categories, each with "name", "slug", and "products" (array of 6 products).
+- each product: "sku" (format "AA-99999"), "title", "price_eur" (number, 2 decimals), "stock" (int), "tags" (3 strings), "dimensions_cm" {"w","h","d"} (numbers).
+Output only the JSON, in a single ```json code block, no commentary.

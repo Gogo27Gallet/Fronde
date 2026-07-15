@@ -1,0 +1,108 @@
+Here is a complete Python file. Rename every occurrence of the variable/parameter `data` to `records`, and add full type hints to every function signature (parameters and return types). Do not change any logic, comments, or formatting otherwise. Return the COMPLETE modified file in a single ```python code block.
+
+```python
+import csv
+import json
+import statistics
+from collections import defaultdict
+from datetime import datetime
+
+
+def load_csv(path):
+    data = []
+    with open(path, newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            data.append(row)
+    return data
+
+
+def parse_dates(data, column, fmt="%Y-%m-%d"):
+    parsed = []
+    for row in data:
+        row = dict(row)
+        try:
+            row[column] = datetime.strptime(row[column], fmt)
+        except (KeyError, ValueError):
+            row[column] = None
+        parsed.append(row)
+    return parsed
+
+
+def coerce_numeric(data, columns):
+    out = []
+    for row in data:
+        row = dict(row)
+        for col in columns:
+            try:
+                row[col] = float(row[col])
+            except (KeyError, TypeError, ValueError):
+                row[col] = None
+        out.append(row)
+    return out
+
+
+def drop_missing(data, required):
+    kept = []
+    for row in data:
+        if all(row.get(col) is not None for col in required):
+            kept.append(row)
+    return kept
+
+
+def group_by(data, key):
+    groups = defaultdict(list)
+    for row in data:
+        groups[row.get(key)].append(row)
+    return dict(groups)
+
+
+def aggregate(data, key, value_col):
+    groups = group_by(data, key)
+    summary = {}
+    for name, rows in groups.items():
+        values = [r[value_col] for r in rows if r.get(value_col) is not None]
+        if not values:
+            continue
+        summary[name] = {
+            "count": len(values),
+            "mean": statistics.fmean(values),
+            "median": statistics.median(values),
+            "min": min(values),
+            "max": max(values),
+        }
+    return summary
+
+
+def top_n(summary, metric, n=5, reverse=True):
+    items = sorted(summary.items(), key=lambda kv: kv[1][metric], reverse=reverse)
+    return items[:n]
+
+
+def to_json(obj, path):
+    def default(o):
+        if isinstance(o, datetime):
+            return o.isoformat()
+        raise TypeError(f"not serializable: {type(o)}")
+
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(obj, f, indent=2, default=default, ensure_ascii=False)
+
+
+def pipeline(csv_path, out_path, date_col, group_col, value_col):
+    data = load_csv(csv_path)
+    data = parse_dates(data, date_col)
+    data = coerce_numeric(data, [value_col])
+    data = drop_missing(data, [date_col, group_col, value_col])
+    summary = aggregate(data, group_col, value_col)
+    to_json(summary, out_path)
+    return summary
+
+
+if __name__ == "__main__":
+    import sys
+
+    result = pipeline(sys.argv[1], sys.argv[2], "date", "region", "amount")
+    for name, stats in top_n(result, "mean"):
+        print(f"{name}: mean={stats['mean']:.2f} n={stats['count']}")
+```

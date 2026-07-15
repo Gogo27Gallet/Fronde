@@ -1,0 +1,8 @@
+Solve the following problem step by step, showing all reasoning and intermediate computations.
+
+A water tank is shaped like an inverted circular cone with a top radius of 3 m and a height of 9 m. Water is pumped in at 2 m³/min while it leaks out at a rate proportional to the current volume, k·V with k = 0.05 min⁻¹.
+1) Express the water volume V as a function of the water height h.
+2) Write the differential equation for V(t) and solve it with V(0) = 0.
+3) Find the equilibrium volume and the corresponding water height.
+4) How long until the water reaches 95% of its equilibrium height?
+Show every algebraic step.

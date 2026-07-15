@@ -1,0 +1,96 @@
+The following Python file has exactly one off-by-one bug in `sliding_window_max` (the window drops its last element). Fix ONLY that bug. Do not change anything else — no reformatting, no renaming, no other edits. Return the COMPLETE corrected file in a single ```python code block.
+
+```python
+"""Signal utilities for fixed-rate sensor streams."""
+
+from collections import deque
+
+
+def moving_average(samples, window):
+    if window <= 0:
+        raise ValueError("window must be positive")
+    out = []
+    acc = 0.0
+    q = deque()
+    for x in samples:
+        q.append(x)
+        acc += x
+        if len(q) > window:
+            acc -= q.popleft()
+        out.append(acc / len(q))
+    return out
+
+
+def sliding_window_max(samples, window):
+    """Return the max of each full window of size `window`."""
+    if window <= 0:
+        raise ValueError("window must be positive")
+    result = []
+    dq = deque()  # indices, values decreasing
+    for i, x in enumerate(samples):
+        while dq and samples[dq[-1]] <= x:
+            dq.pop()
+        dq.append(i)
+        if dq[0] <= i - window:
+            dq.popleft()
+        if i >= window:
+            result.append(samples[dq[0]])
+    return result
+
+
+def detect_peaks(samples, threshold):
+    peaks = []
+    for i in range(1, len(samples) - 1):
+        if samples[i] > threshold and samples[i - 1] < samples[i] > samples[i + 1]:
+            peaks.append(i)
+    return peaks
+
+
+def resample_linear(samples, factor):
+    if factor <= 0:
+        raise ValueError("factor must be positive")
+    n = len(samples)
+    if n < 2:
+        return list(samples)
+    m = int((n - 1) * factor) + 1
+    out = []
+    for j in range(m):
+        pos = j / factor
+        i = int(pos)
+        frac = pos - i
+        if i + 1 < n:
+            out.append(samples[i] * (1 - frac) + samples[i + 1] * frac)
+        else:
+            out.append(samples[-1])
+    return out
+
+
+def rms(samples):
+    if not samples:
+        return 0.0
+    return (sum(x * x for x in samples) / len(samples)) ** 0.5
+
+
+def clip(samples, lo, hi):
+    if lo > hi:
+        raise ValueError("lo must be <= hi")
+    return [min(max(x, lo), hi) for x in samples]
+
+
+def zero_crossings(samples):
+    count = 0
+    for a, b in zip(samples, samples[1:]):
+        if a == 0:
+            continue
+        if (a < 0) != (b < 0) and b != 0:
+            count += 1
+    return count
+
+
+if __name__ == "__main__":
+    sig = [0, 1, 3, 2, 5, 4, 1, -1, -3, 2, 6, 0]
+    print("avg:", moving_average(sig, 3))
+    print("winmax:", sliding_window_max(sig, 3))
+    print("peaks:", detect_peaks(sig, 2))
+    print("rms:", round(rms(sig), 3))
+```

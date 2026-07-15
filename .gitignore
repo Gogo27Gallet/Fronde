@@ -1,0 +1,6 @@
+models/
+llama.cpp/
+__pycache__/
+*.pyc
+results/*.gpu.csv
+.venv/
