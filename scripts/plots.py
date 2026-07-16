@@ -18,6 +18,27 @@ import matplotlib.pyplot as plt  # noqa: E402
 
 RESULTS = Path(__file__).resolve().parent.parent / "results"
 
+# Palette catégorielle validée (dataviz reference instance, light mode) —
+# la couleur suit la config, jamais son rang.
+CONFIG_COLORS = {
+    "baseline": "#2a78d6",
+    "draft": "#008300",
+    "ngram-simple": "#e87ba4",
+    "ngram-mod": "#eda100",
+    "draft-n8-p0.45": "#1baf7a",
+    "draft-n8-p0.75": "#eb6834",
+    "draft-n12-p0.75": "#4a3aa7",
+}
+INK, INK2 = "#1a1a19", "#6b6a60"
+
+plt.rcParams.update({
+    "axes.edgecolor": "#d9d8ce", "axes.linewidth": 0.8,
+    "axes.grid": True, "grid.color": "#eceae2", "grid.linewidth": 0.6,
+    "axes.axisbelow": True, "text.color": INK,
+    "axes.labelcolor": INK2, "xtick.color": INK2, "ytick.color": INK2,
+    "font.size": 9,
+})
+
 
 def load(path: Path):
     rows = json.loads(path.read_text())
@@ -33,20 +54,30 @@ def load(path: Path):
 
 def grouped_bars(data: dict, title: str, ylabel: str, out: Path, hline=None):
     prompts = list(data)
-    configs = sorted({c for v in data.values() for c in v})
-    w = 0.8 / max(1, len(configs))
-    fig, ax = plt.subplots(figsize=(11, 5))
+    # ordre fixe des configs (jamais recyclé), pas d'ordre alphabétique
+    configs = [c for c in CONFIG_COLORS if any(c in v for v in data.values())]
+    w = 0.72 / max(1, len(configs))
+    fig, ax = plt.subplots(figsize=(11, 4.6))
     for j, cfg in enumerate(configs):
         xs = [i + j * w for i in range(len(prompts))]
         ys = [data[p].get(cfg, 0) for p in prompts]
-        ax.bar(xs, ys, width=w, label=cfg)
+        bars = ax.bar(xs, ys, width=w * 0.92, label=cfg,
+                      color=CONFIG_COLORS[cfg], edgecolor="white", linewidth=1)
+        # labels directs sélectifs : uniquement les valeurs saillantes (>1.5× / >120 t/s)
+        thr = 1.5 if hline is not None else 120
+        for b, y in zip(bars, ys):
+            if y > thr:
+                ax.annotate(f"{y:.2g}", (b.get_x() + b.get_width() / 2, y),
+                            ha="center", va="bottom", fontsize=7.5, color=INK)
     if hline is not None:
-        ax.axhline(hline, color="black", lw=1, ls="--", alpha=0.6)
-    ax.set_xticks([i + 0.4 - w / 2 for i in range(len(prompts))])
-    ax.set_xticklabels(prompts, rotation=20, ha="right", fontsize=8)
+        ax.axhline(hline, color=INK2, lw=1, ls="--", alpha=0.8)
+    ax.set_xticks([i + 0.36 - w / 2 for i in range(len(prompts))])
+    ax.set_xticklabels(prompts, rotation=18, ha="right", fontsize=8)
     ax.set_ylabel(ylabel)
-    ax.set_title(title)
-    ax.legend(fontsize=8)
+    ax.set_title(title, loc="left", fontsize=11, color=INK)
+    ax.legend(fontsize=8, frameon=False, ncols=len(configs))
+    for s in ("top", "right"):
+        ax.spines[s].set_visible(False)
     fig.tight_layout()
     fig.savefig(out, dpi=150)
     print(f"→ {out}")

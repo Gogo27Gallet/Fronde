@@ -98,3 +98,60 @@ Objectif : plusieurs tokens par lecture des poids (spéculatif draft + ngram), r
 - Trouvailles v1 à confirmer en v2 : **la régression prose du draft a disparu sous Linux**
   (Windows −33 % → Linux 1,00) ; draft à **1,39× sur math** (108 t/s) ; bracketing vindiqué
   (fenêtre entière à 64 t/s pendant gen_prose_fr, réfs comprises → ratios restés honnêtes).
+
+### 2026-07-16 — Phase 4/5 FINAL : batterie v2 (thinking off, n_match=12), 38/38 valides
+
+Conditions : b10034 CUDA sm_120, `-c 4096 --reasoning off`, temp 0, seed 42, 3 reps (médiane),
+bracketé (dérive max observée 2,6 %), cap 145 W vérifié.
+
+**Génération** (ratio vs réf bracketée ; réf ≈ 76–78 t/s)
+
+| prompt | draft (n12 p0.45) | ngram-simple | ngram-mod |
+|---|---|---|---|
+| code Python | **1,56× (122 t/s)** | 1,01 | 1,00 |
+| prose FR | 1,02 | 1,00 | 1,00 |
+| prose EN | 0,99 | 1,00 | 1,01 |
+| math | **1,97× (153 t/s)** | 0,99 | 0,98 |
+| JSON | **1,92× (150 t/s)** | 1,03 | 1,03 |
+
+**Éditions** (sortie ≈ copie du prompt)
+
+| tâche | draft | ngram-simple | ngram-mod |
+|---|---|---|---|
+| rename+hints (grosse réécriture) | **2,76×** | 1,87 | 1,86 |
+| bugfix off-by-one (copie quasi pure) | 2,80 | 9,27 | **9,16× (697 t/s)** |
+| edit JSON (3 changements) | 2,62 | 5,24 | **5,26× (404 t/s)** |
+
+**Grille draft** (code / prose FR) : n12-p0.45 = champion code (1,56) ; n8-p0.45 : 1,60/0,99–1,04 ;
+n8-p0.75 : 1,52/1,04 ; n12-p0.75 : 1,52/1,05 → plus aucune config perdante sous Linux.
+
+**Agent-loop serveur chaud** (5 éditions, stop au fence, 4169 tokens identiques dans les 2 modes
+→ la spéculation ne change pas la sortie) : ngram-mod **14,6 s vs 57,3 s = 3,92×**,
+**284,8 t/s soutenus**, pic 887 t/s. **Windows (3,8× / 260) battu.**
+NB : la même boucle en llama-cli (rechargement modèle à chaque tour) ne donnait que 1,17× —
+le serveur chaud fait partie du protocole.
+
+**Écarts vs Windows, commentés** :
+1. Baseline +5 % (80,1), pas de spill WDDM — prédit et confirmé.
+2. La régression prose du draft (−33 % Windows) **n'existe pas** sous Linux/b10034 — le coût du
+   draft muet (~2,6 ms/tok Windows) a été absorbé (scheduler draft amélioré + launch overhead moindre).
+3. Le gisement d'édition dépend du thinking OFF (découverte du jour) et de n_match=12 ;
+   médiane edits ngram 5,26× froid (Windows 6,5×, mix de tâches différent), pics 887 vs >600.
+4. Draft partout ≥ 0,99 → sous Linux le draft est devenu quasi « jamais perdant » aussi,
+   mais ngram-simple reste le plancher sûr (zéro dépendance au 2e modèle).
+
+### 2026-07-16 — Phase 5 : FRONDE-Router validé
+
+- Rejeu hors-ligne des invariants sur battery_main v2 : **PASS global**
+  (5/5 contenus ≥ réf ; router = champion statique sur code/math/JSON).
+- Live (sonde 48 tok + époques + classe EDIT) : prose→safe 78,6 t/s ;
+  math→aggressive 119,2 t/s ; edit_json→edit 327,1 t/s. Comportement conforme.
+
+### 2026-07-16 — Phase 6 : livrable
+
+- Agent-loop llama-cli (rechargement/tour) : 1,17× seulement → protocole corrigé : serveur chaud
+  + stop au fence (`agent_loop_server.py`) → **3,92×, 285 t/s soutenus, pic 887 t/s**.
+- Graphes générés (`results/*.png`) : ratio par contenu (ligne 1,0 = jamais perdant),
+  vitesses, session GPU. Palette catégorielle validée, couleur fixe par config.
+- `demo.py` validé de bout en bout : prose→safe 77,9 ; code→safe 76,5 ; JSON→aggressive 136,9 ;
+  edit→edit **236,2 t/s**. README final chiffré. Repo complet, commits locaux, aucun push.

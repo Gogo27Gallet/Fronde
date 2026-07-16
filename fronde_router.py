@@ -97,9 +97,11 @@ class Router:
             self.server.wait(timeout=30)
         self.server, self.current_mode = None, None
 
-    def _complete(self, prompt: str, n_predict: int) -> tuple[str, float, int]:
+    def _complete(self, prompt: str, n_predict: int,
+                  stop: list[str] | None = None) -> tuple[str, float, int]:
         """→ (texte, tok/s, n_tokens) via /completion."""
         body = json.dumps({"prompt": prompt, "n_predict": n_predict,
+                           "stop": stop or [],
                            "temperature": 0, "seed": 42, "cache_prompt": False}).encode()
         req = urllib.request.Request(f"http://127.0.0.1:{PORT}/completion", body,
                                      {"Content-Type": "application/json"})
