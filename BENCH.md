@@ -44,7 +44,7 @@ Objectif : plusieurs tokens par lecture des poids (spéculatif draft + ngram), r
 
 | Composant | Version | Commit/SHA |
 |---|---|---|
-| CUDA toolkit | _(en cours)_ | |
+| CUDA toolkit | 13.1.1 (repo apt NVIDIA ubuntu2604) | nvcc `cuda_13.1.r13.1/compiler.37061995_0` |
 | llama.cpp | tag **b10034** | `505b1ed15ca80e2a19f12ff4ac365e40fb374053` |
 | Qwen3-8B-Q4_K_M | 5 027 783 488 o ✔ (= Windows), source Qwen/Qwen3-8B-GGUF | SHA256 `d98cdcbd03e17ce47681435b5150e34c1417f50b5c0019dd560e4882c5745785` ✔ **vérifié 2026-07-15** |
 | Qwen3-0.6B-Q8_0 | 511 791 104+ o, source Qwen/Qwen3-0.6B-GGUF | SHA256 `9465e63a22add5354d9bb4b99e90117043c7124007664907259bd16d043bb031` |
