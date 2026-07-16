@@ -67,3 +67,19 @@ Objectif : plusieurs tokens par lecture des poids (spéculatif draft + ngram), r
   NVIDIA corrigera.
 - Harnais : llama-cli b10034 exige `-st` + stdin fermé (sinon mode interactif) ; timings au format
   `[ Prompt: X t/s | Generation: Y t/s ]`, `LC_ALL=C` obligatoire (virgule décimale FR sinon).
+- Check « GPU propre » recalibré : le bureau (gnome-shell + remote-desktop + Chrome) occupe
+  ~544 MiB incompressibles → critère = **VRAM libre ≥ 6800 MiB** (modèle 5 Go + KV + marge),
+  pas un seuil d'occupation.
+
+### 2026-07-15 — Phase 4 : premiers chiffres Linux (build CUDA sm_120, b10034)
+
+| Mesure | Windows | **Linux** | Écart |
+|---|---|---|---|
+| 8B Q4_K_M tg128 | 76 | **80,12 ± 0,08** | **+5,4 %** — 90 % du plafond théorique (89) ; pas de spill WDDM, prédiction confirmée |
+| 8B Q4_K_M pp512 | ~2900 | **3031 ± 96** | +4,5 % ; ratio pp/tg = **37,8×** (le gisement annoncé ≈ 38×) |
+| 0.6B Q8_0 tg128 | 378 | **406,85 ± 1,79** | +7,6 % ; toujours ~58 % du théorique (~700) → **kernel-launch-bound confirmé sous Linux** |
+| 0.6B Q8_0 pp512 | — | 24 651 ± 3 312 | |
+| ngram-simple, gen_json (smoke, 1 rep) | ≥ réf | ratio **1,010** (réfs 78,1/77,6, dérive 0,6 %) | plancher « jamais perdant » : premier point conforme |
+
+- Batterie complète lancée (bracketé, 3 reps) : baseline/draft/ngram-simple/ngram-mod × 8 prompts,
+  puis grille draft n_max{8,12}×p_min{0.45,0.75} × {code, prose FR} → `results/battery_*.json`.

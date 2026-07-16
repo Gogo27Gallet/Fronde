@@ -12,7 +12,9 @@ import sys
 import time
 
 QUERY = "memory.used,memory.free,power.draw,temperature.gpu,utilization.gpu,power.limit"
-CLEAN_VRAM_MAX_MIB = 300   # au-delà : quelque chose squatte la VRAM (leçon 3)
+# Leçon 3 : ce qui compte = VRAM LIBRE ≥ modèle (5 Go) + KV + marge, sinon spill silencieux.
+# Le bureau (gnome-shell/remote-desktop/navigateur) prend ~500 MiB incompressibles ici.
+CLEAN_VRAM_MIN_FREE_MIB = 6800
 EXPECTED_POWER_CAP_W = 145.0  # la réf est pinée à 145 W (leçon 2)
 
 
@@ -28,8 +30,8 @@ def sample():
 def check_clean() -> int:
     used, free, power, temp, util, cap = sample()
     ok = True
-    if used > CLEAN_VRAM_MAX_MIB:
-        print(f"KO: VRAM occupée {used:.0f} MiB > {CLEAN_VRAM_MAX_MIB} MiB — GPU pas propre (spill silencieux possible)")
+    if free < CLEAN_VRAM_MIN_FREE_MIB:
+        print(f"KO: VRAM libre {free:.0f} MiB < {CLEAN_VRAM_MIN_FREE_MIB} MiB — risque de spill silencieux (leçon 3)")
         ok = False
     if abs(cap - EXPECTED_POWER_CAP_W) > 1:
         print(f"KO: power cap {cap:.0f} W ≠ {EXPECTED_POWER_CAP_W:.0f} W attendu")

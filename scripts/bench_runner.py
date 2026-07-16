@@ -91,8 +91,8 @@ def run_once(prompt_text: str, extra_args: list[str], n_predict: int) -> dict:
     }
 
 
-def median_run(prompt_text: str, extra_args: list[str], n_predict: int, reps: int = REPS) -> dict:
-    runs = [run_once(prompt_text, extra_args, n_predict) for _ in range(reps)]
+def median_run(prompt_text: str, extra_args: list[str], n_predict: int, reps: int | None = None) -> dict:
+    runs = [run_once(prompt_text, extra_args, n_predict) for _ in range(reps or REPS)]
     speeds = [r["tok_s"] for r in runs]
     med = statistics.median(speeds)
     chosen = min(runs, key=lambda r: abs(r["tok_s"] - med))
@@ -129,6 +129,7 @@ def gpu_clean_or_die() -> None:
 
 
 def main() -> None:
+    global REPS
     ap = argparse.ArgumentParser()
     ap.add_argument("--configs", nargs="+", required=True, choices=sorted(CONFIGS))
     ap.add_argument("--prompts", nargs="+", required=True)
@@ -137,7 +138,6 @@ def main() -> None:
     args = ap.parse_args()
 
     gpu_clean_or_die()
-    global REPS
     REPS = args.reps
 
     mon_csv = Path(args.out).with_suffix(".gpu.csv")
