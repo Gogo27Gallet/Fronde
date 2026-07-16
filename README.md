@@ -12,6 +12,8 @@ between what the silicon can chew and what decoding feeds it.
 
 The whole project is one idea: **produce several tokens per read of the weights.**
 
+![Speedup ratio vs bracketed baseline, per content type](results/ratio_by_content.png)
+
 ## What we measured
 
 All numbers: llama.cpp `b10034` (`505b1ed1`), CUDA 13.1 (sm_120), `-c 4096`,
