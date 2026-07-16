@@ -59,3 +59,11 @@ Objectif : plusieurs tokens par lecture des poids (spéculatif draft + ngram), r
   `--spec-ngram-mod-n-{min,max,match}`) → rien à réimplémenter, mêmes noms que la campagne Windows.
 - Qwen3-0.6B-Q8_0 téléchargé, SHA256 enregistré. 8B en cours.
 - Batterie de prompts figée (5 gen + 3 edit) dans `prompts/`. `scripts/gpu_monitor.py` écrit.
+- CUDA **13.1.1** installé (repo apt NVIDIA ubuntu2604, `cuda-toolkit-13-1`).
+- **Incompatibilité CUDA 13.1 ↔ glibc Ubuntu 26.04** : la glibc déclare `rsqrt`/`rsqrtf` (C23,
+  garde `IEC_60559_FUNCS_EXT_C23`, activée par `_GNU_SOURCE` que g++ définit toujours) avec
+  `noexcept`, en conflit avec `crt/math_functions.h`. Correctif : ajout de `noexcept (true)` aux
+  2 déclarations CUDA (l. 629/653), sauvegarde dans `math_functions.h.bak`. À retirer quand
+  NVIDIA corrigera.
+- Harnais : llama-cli b10034 exige `-st` + stdin fermé (sinon mode interactif) ; timings au format
+  `[ Prompt: X t/s | Generation: Y t/s ]`, `LC_ALL=C` obligatoire (virgule décimale FR sinon).

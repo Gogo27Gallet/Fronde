@@ -52,36 +52,40 @@ for n_max in (8, 12):
             "--draft-max", str(n_max), "--draft-p-min", p_min,
         ]
 
-TIMING_RE = re.compile(
-    r"eval time\s*=\s*([\d.]+)\s*ms\s*/\s*(\d+)\s*(?:runs|tokens).*?([\d.]+)\s*tokens per second",
-    re.S,
-)
+# résumé llama-cli : "[ Prompt: 123.4 t/s | Generation: 56.7 t/s ]" (LC_ALL=C requis)
+TIMING_RE = re.compile(r"Generation:\s*([\d.]+)\s*t/s")
+# lignes perf classiques en secours : "eval time = ... , 76.2 tokens per second"
+PERF_RE = re.compile(r"eval time.*?([\d.]+)\s*tokens per second")
+ACCEPT_RE = re.compile(r"accept(?:ed|ance)?[^\d]*([\d.]+)\s*%?", re.I)
+import os  # noqa: E402
+
+ENV = {**os.environ, "LC_ALL": "C"}
 
 
 def run_once(prompt_text: str, extra_args: list[str], n_predict: int) -> dict:
-    """Un run llama-cli, retourne {'tok_s', 'n_gen', 'output', 'stderr_tail'}."""
+    """Un run llama-cli, retourne {'tok_s', 'output', 'stderr_tail', ...}."""
     cmd = [
         str(LLAMA_CLI), "-m", str(MODEL_8B),
         "-ngl", "99", "--temp", "0", "--seed", "42",
-        "-n", str(n_predict), "-no-cnv", "--no-display-prompt",
+        "-n", str(n_predict), "-st", "-no-cnv", "--no-display-prompt",
         "-p", prompt_text,
         *extra_args,
     ]
     t0 = time.time()
-    proc = subprocess.run(cmd, capture_output=True, text=True, timeout=1800)
+    proc = subprocess.run(cmd, capture_output=True, text=True, timeout=1800,
+                          stdin=subprocess.DEVNULL, env=ENV)
     wall = time.time() - t0
     if proc.returncode != 0:
         raise RuntimeError(f"llama-cli rc={proc.returncode}\n{proc.stderr[-2000:]}")
-    # le dernier bloc "eval time" du stderr = génération (pas le prompt eval)
-    matches = [m for m in TIMING_RE.finditer(proc.stderr)
-               if "prompt eval" not in proc.stderr[max(0, m.start() - 20):m.start()]]
-    if not matches:
-        raise RuntimeError(f"timings introuvables dans stderr:\n{proc.stderr[-2000:]}")
-    ms, n_tok, tok_s = matches[-1].groups()
+    blob = proc.stderr + proc.stdout
+    m = TIMING_RE.findall(blob) or PERF_RE.findall(blob)
+    if not m:
+        raise RuntimeError(f"timings introuvables:\n{proc.stderr[-2000:]}")
+    accept = ACCEPT_RE.findall(proc.stderr)
     return {
-        "tok_s": float(tok_s),
-        "n_gen": int(n_tok),
+        "tok_s": float(m[-1]),
         "wall_s": round(wall, 2),
+        "accept_pct": float(accept[-1]) if accept else None,
         "output": proc.stdout,
         "stderr_tail": proc.stderr[-3000:],
     }
