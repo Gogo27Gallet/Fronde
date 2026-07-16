@@ -40,7 +40,7 @@ REPS = 3
 CONFIGS: dict[str, list[str]] = {
     "baseline": [],
     "draft": ["-md", str(MODEL_06B), "--spec-type", "draft-simple",
-              "--draft-max", "12", "--draft-p-min", "0.45"],
+              "--spec-draft-n-max", "12", "--draft-p-min", "0.45"],
     "ngram-simple": ["--spec-type", "ngram-simple"],
     "ngram-mod": ["--spec-type", "ngram-mod"],
 }
@@ -49,7 +49,7 @@ for n_max in (8, 12):
     for p_min in ("0.45", "0.75"):
         CONFIGS[f"draft-n{n_max}-p{p_min}"] = [
             "-md", str(MODEL_06B), "--spec-type", "draft-simple",
-            "--draft-max", str(n_max), "--draft-p-min", p_min,
+            "--spec-draft-n-max", str(n_max), "--draft-p-min", p_min,
         ]
 
 # résumé llama-cli : "[ Prompt: 123.4 t/s | Generation: 56.7 t/s ]" (LC_ALL=C requis)
@@ -66,7 +66,7 @@ def run_once(prompt_text: str, extra_args: list[str], n_predict: int) -> dict:
     """Un run llama-cli, retourne {'tok_s', 'output', 'stderr_tail', ...}."""
     cmd = [
         str(LLAMA_CLI), "-m", str(MODEL_8B),
-        "-ngl", "99", "--temp", "0", "--seed", "42",
+        "-ngl", "99", "-c", "4096", "--temp", "0", "--seed", "42",
         "-n", str(n_predict), "-st", "-no-cnv", "--no-display-prompt",
         "-p", prompt_text,
         *extra_args,
@@ -149,12 +149,17 @@ def main() -> None:
             n_pred = N_PREDICT_EDIT if prompt_name.startswith("edit_") else N_PREDICT_GEN
             for config in args.configs:
                 print(f"== {prompt_name} × {config}", file=sys.stderr)
-                if config == "baseline":
-                    r = median_run(text, CONFIGS["baseline"], n_pred)
-                    results.append({"prompt": prompt_name, "config": "baseline",
-                                    "test_tok_s": r["tok_s_median"], "raw": r, "valid": True})
-                else:
-                    results.append(bracketed(prompt_name, text, config, n_pred))
+                try:
+                    if config == "baseline":
+                        r = median_run(text, CONFIGS["baseline"], n_pred)
+                        results.append({"prompt": prompt_name, "config": "baseline",
+                                        "test_tok_s": r["tok_s_median"], "raw": r, "valid": True})
+                    else:
+                        results.append(bracketed(prompt_name, text, config, n_pred))
+                except Exception as e:  # une config cassée ne tue pas la batterie
+                    print(f"  !! ERREUR {prompt_name}×{config}: {e}", file=sys.stderr)
+                    results.append({"prompt": prompt_name, "config": config,
+                                    "error": str(e)[:500], "valid": False})
                 Path(args.out).write_text(json.dumps(results, indent=1, ensure_ascii=False))
     finally:
         mon.terminate()
