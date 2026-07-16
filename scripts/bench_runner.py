@@ -42,7 +42,7 @@ CONFIGS: dict[str, list[str]] = {
     "draft": ["-md", str(MODEL_06B), "--spec-type", "draft-simple",
               "--spec-draft-n-max", "12", "--draft-p-min", "0.45"],
     "ngram-simple": ["--spec-type", "ngram-simple"],
-    "ngram-mod": ["--spec-type", "ngram-mod"],
+    "ngram-mod": ["--spec-type", "ngram-mod", "--spec-ngram-mod-n-match", "12"],
 }
 # Grille draft de la Phase 4 (n_max × p_min)
 for n_max in (8, 12):
@@ -66,7 +66,7 @@ def run_once(prompt_text: str, extra_args: list[str], n_predict: int) -> dict:
     """Un run llama-cli, retourne {'tok_s', 'output', 'stderr_tail', ...}."""
     cmd = [
         str(LLAMA_CLI), "-m", str(MODEL_8B),
-        "-ngl", "99", "-c", "4096", "--temp", "0", "--seed", "42",
+        "-ngl", "99", "-c", "4096", "--reasoning", "off", "--temp", "0", "--seed", "42",
         "-n", str(n_predict), "-st", "-no-cnv", "--no-display-prompt",
         "-p", prompt_text,
         *extra_args,

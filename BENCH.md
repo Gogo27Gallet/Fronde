@@ -83,3 +83,18 @@ Objectif : plusieurs tokens par lecture des poids (spéculatif draft + ngram), r
 
 - Batterie complète lancée (bracketé, 3 reps) : baseline/draft/ngram-simple/ngram-mod × 8 prompts,
   puis grille draft n_max{8,12}×p_min{0.45,0.75} × {code, prose FR} → `results/battery_*.json`.
+
+### 2026-07-16 — DÉCOUVERTE : le mode thinking de Qwen3 tuait le gisement d'édition
+
+- Batterie v1 : 38/38 mesures valides (dérive ≤ 2,6 %) MAIS éditions à 1,03–1,56× au lieu des
+  6,5× Windows. **Leçon 4 appliquée** (inspecter les sorties) : le modèle partait en
+  chain-of-thought (`[Start thinking]` — llama-cli b10034 applique le template chat même en
+  single-turn, et Qwen3 pense par défaut) → la sortie n'était plus une copie du prompt → rien à
+  accepter pour ngram-mod. La campagne Windows avait nécessairement le thinking désactivé.
+- Correctif : `--reasoning off` partout (runner, router, agent-loop).
+- Tuning ngram-mod sur edit_json (thinking off, baseline 77,2) :
+  n_match=6 → 290,7 t/s ; **n_match=12 → 409,2 t/s (5,3×)** ; n_match=24 (défaut) → 276,4 t/s.
+  → `--spec-ngram-mod-n-match 12` figé dans toutes les configs.
+- Trouvailles v1 à confirmer en v2 : **la régression prose du draft a disparu sous Linux**
+  (Windows −33 % → Linux 1,00) ; draft à **1,39× sur math** (108 t/s) ; bracketing vindiqué
+  (fenêtre entière à 64 t/s pendant gen_prose_fr, réfs comprises → ratios restés honnêtes).

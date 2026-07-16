@@ -55,7 +55,7 @@ MODES: dict[str, list[str]] = {
     "safe":       ["--spec-type", "ngram-simple"],
     "aggressive": ["-md", str(MODEL_06B), "--spec-type", "draft-simple",
                    "--spec-draft-n-max", "12", "--draft-p-min", "0.45"],
-    "edit":       ["--spec-type", "ngram-mod"],
+    "edit":       ["--spec-type", "ngram-mod", "--spec-ngram-mod-n-match", "12"],
 }
 
 
@@ -75,6 +75,7 @@ class Router:
             return
         self.stop()
         cmd = [str(SERVER_BIN), "-m", str(MODEL_8B), "-ngl", "99", "-c", "4096",
+               "--reasoning", "off",
                "--port", str(PORT), "--temp", "0", "--seed", "42",
                *MODES[mode]]
         self.server = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
