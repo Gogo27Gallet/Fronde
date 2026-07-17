@@ -4,3 +4,6 @@ __pycache__/
 *.pyc
 results/*.gpu.csv
 .venv/
+
+# Enregistrement asciinema intermédiaire (le GIF rendu suffit)
+assets/*.cast

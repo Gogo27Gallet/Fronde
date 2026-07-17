@@ -2,6 +2,10 @@
 
 *Speculative decoding, measured honestly, on a €300 GPU.*
 
+![FRONDE demo — live routing across prose, code, JSON and edits, with a live tok/s counter](assets/demo.gif)
+
+*Illustrative run; all performance claims come from the bracketed batteries.*
+
 ## The wall
 
 Generating one token means re-reading every weight. On an RTX 5060 (448 GB/s) running
