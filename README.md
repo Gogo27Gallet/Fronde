@@ -81,6 +81,16 @@ EMA collapse detector.
 the router *is* the champion on code, math and JSON). Live routing: prose→safe
 (78.6 tok/s), math→aggressive (119.2 tok/s), JSON edit→edit (327.1 tok/s).
 
+**Cold-probe caveat.** The router classifies a novel prompt with a short 48-token
+probe on the aggressive config. On that short window a draft model has not yet
+amortized its speculation (and right after a server swap GPU clocks are still
+ramping), so the probe can measure the aggressive config *below* the plain floor
+and conservatively route to `safe` — e.g. plain code, where the draft wins 1.56×
+over a full generation but loses on 48 tokens. This never costs throughput: `safe`
+(ngram-simple) is ≥ baseline everywhere, the floor doing its job. `demo.py` warms
+the aggressive server before routing, matching the battery protocol; full-generation
+numbers remain the source of every performance claim.
+
 ## Reproduce
 
 ```bash
