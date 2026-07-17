@@ -64,8 +64,11 @@ the output (greedy decoding).
    vanishes if the model "thinks" first: chain-of-thought is prose, not copy. One run
    with Qwen3's default thinking enabled cut edits from 5.3× to 1.03×. Capture your
    outputs; an anomalous acceptance rate is a measurement, not a victory.
-4. **ngram-simple is the never-losing floor**: ≥ 0.99× everywhere, no second model,
-   and up to 9.27× on edits for free.
+4. **ngram-simple is the safe floor**: **no material regression in our benchmark
+   suite** (≥ 0.99× on every content type measured), no second model, and up to 9.27×
+   on edits for free. The stronger *"never below baseline"* phrasing is reserved for
+   the **router invariant**, checked by `reproduce.sh` (verdict **PASS**) — not a
+   guarantee about every conceivable prompt.
 5. **What didn't work:** EAGLE-3 (AngelSlim head for Qwen3-8B) collapsed on a Q4
    target (58 % acceptance on code → 14.8 % on French prose), beaten by the plain
    0.6B draft everywhere. We eliminated quantization, conversion, d2t coverage and
@@ -91,7 +94,8 @@ amortized its speculation (and right after a server swap GPU clocks are still
 ramping), so the probe can measure the aggressive config *below* the plain floor
 and conservatively route to `safe` — e.g. plain code, where the draft wins 1.56×
 over a full generation but loses on 48 tokens. This never costs throughput: `safe`
-(ngram-simple) is ≥ baseline everywhere, the floor doing its job. `demo.py` warms
+(ngram-simple) is ≥ baseline on every content type in our suite, the floor doing its
+job. `demo.py` warms
 the aggressive server before routing, matching the battery protocol; full-generation
 numbers remain the source of every performance claim.
 
@@ -123,6 +127,33 @@ Note for Ubuntu 26.04: CUDA 13.1's `crt/math_functions.h` clashes with glibc's C
   model looping) — or your speedup can silently die to chain-of-thought. Read what
   the model actually wrote.
 
+## Related work
+
+Adaptive and edit-oriented speculative decoding are active research areas. FRONDE's
+niche is deliberately narrow: **training-free, lossless (greedy), a single consumer
+GPU, routing by *measurement* rather than prediction, and one-command reproduction.**
+
+- **SpecRouter** ([arXiv:2505.07680](https://arxiv.org/abs/2505.07680)) frames inference
+  as adaptive routing across *multi-level* chains of draft/verifier models, using
+  real-time profiling and predictive similarity to choose a path. FRONDE routes among
+  *training-free modes* (one small off-the-shelf draft, or prompt-lookup n-gram) on a
+  single 8 GB GPU, and it *measures* a short probe instead of predicting.
+- **MetaSD** ([arXiv:2604.05417](https://arxiv.org/abs/2604.05417)) selects among
+  multiple trained drafters with alignment feedback, framed as a bandit problem. FRONDE
+  uses no trained drafter beyond a stock 0.6B and requires no additional training.
+- **EfficientEdit** ([arXiv:2506.02780](https://arxiv.org/abs/2506.02780), ASE 2025)
+  targets code editing with an *edit-oriented draft model* plus dynamic verification,
+  reporting up to **10.4×–13.1×**. Our edit speedups (up to ~9× on a near-pure copy)
+  come from *training-free* prompt-copy n-gram speculation with no extra model — a
+  simpler mechanism, and we cite their higher numbers to keep ours in honest context.
+
+## Acknowledgements
+
+*Developed with heavy assistance from Claude Code; experimental design, hardware runs
+and release decisions by the maintainer.*
+
 ## License
 
-MIT.
+MIT (this repository's code — see `LICENSE`). Third-party components: `THIRD_PARTY_NOTICES.md`.
+Model weights (Qwen3, Apache-2.0): `MODEL_LICENSES.md`.
+
